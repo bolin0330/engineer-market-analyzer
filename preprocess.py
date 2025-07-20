@@ -2,6 +2,7 @@ import json
 import pandas as pd
 import os
 import re
+from translation import location_map, experience_map, edu_map, industry_map
 
 # File paths
 RAW_PATH = "data/raw/104_swe_jobs.json"
@@ -37,14 +38,27 @@ for job in raw_jobs:
         if pattern.search(description):
             tech_found.append(skill)
 
+    raw_location = job.get("jobAddrNoDesc", "")
+    period = job.get("periodDesc", "")
+    industry = job.get("coIndustryDesc", "")
+    edu = job.get("optionEdu", "")
+
+    # Extract only city/country name (remove district/area)
+    known_locations = sorted(location_map.keys(), key=lambda x: -len(x))
+    loc_key = next((loc for loc in known_locations if raw_location.startswith(loc)), raw_location)
+
     cleaned_jobs.append({
         "jobName": job.get("jobName", ""),
-        "jobAddrNoDesc": job.get("jobAddrNoDesc", ""),
+        "jobAddrNoDesc": loc_key,
+        "jobAddrNoDesc_en": location_map.get(loc_key, loc_key),
         "custName": job.get("custName", ""),
         "tech_skills": ", ".join(sorted(set(tech_found))),
-        "periodDesc": job.get("periodDesc", ""),
-        "coIndustryDesc": job.get("coIndustryDesc", ""),
-        "optionEdu": job.get("optionEdu", "")
+        "periodDesc": period,
+        "periodDesc_en": experience_map.get(period, period),
+        "coIndustryDesc": industry,
+        "coIndustryDesc_en": industry_map.get(industry, industry),
+        "optionEdu": edu,
+        "optionEdu_en": edu_map.get(edu, edu)
     })
 
 # Save to CSV
